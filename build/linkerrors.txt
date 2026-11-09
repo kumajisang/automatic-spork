@@ -1,0 +1,8 @@
+================================================================================
+Linker Errors
+Generated: 2026-11-08T06:23:14.368Z
+Total Errors: 1
+================================================================================
+
+[LNK1104] (MSVC)
+无法打开文件“C:\Users\qq908\Desktop\BatteryMonitor\build\Release\BatteryMonitor.exe” [C:\Users\qq908\Desktop\BatteryMonitor\build\BatteryMonitor.vcxproj]

@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<style>
+  :root {
+    --header-text: #ffffff; --text-main: #f5f5f5; --text-sub: #a1a1a6;
+    --card-bg: rgba(255, 255, 255, 0.05); --card-hover: rgba(255, 255, 255, 0.08); 
+    --accent-pink: #ff69b4; --accent-purple: #a078ff; --accent-danger: #ff4757;
+    --divider: rgba(255, 255, 255, 0.08); --btn-bg: rgba(255, 255, 255, 0.06); --btn-border: rgba(255, 255, 255, 0.1);
+  }
+  body.light-theme {
+    --header-text: #1a1a1a; --text-main: #2c2c2e; --text-sub: #6e6e73; 
+    --card-bg: rgba(255, 255, 255, 0.6); --card-hover: rgba(255, 255, 255, 0.9);
+    --divider: rgba(0, 0, 0, 0.06); --btn-bg: rgba(255, 255, 255, 0.5); --btn-border: rgba(0, 0, 0, 0.08);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft YaHei", system-ui, sans-serif; }
+  html, body { width: 100%; height: 100%; overflow: hidden; user-select: none; }
+  body { background: #1c1c1e; color: var(--text-main); display: flex; flex-direction: column; transition: background 0.4s, color 0.4s; position: relative; }
+  body::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.03), transparent 70%); z-index: -1; pointer-events: none; }
+  body.light-theme { background: #f5f5f0; }
+  body.light-theme::before { background: radial-gradient(circle at 50% 0%, rgba(0, 0, 0, 0.02), transparent 70%); }
+
+  .header-wrap { padding: 20px 40px 0 40px; flex-shrink: 0; position: relative; z-index: 100; }
+  .header { display: flex; align-items: center; justify-content: space-between; }
+  .title-wrap { display: flex; flex-direction: column; align-items: flex-start; }
+  h1 { font-size: 24px; font-weight: 700; letter-spacing: 1.5px; color: var(--header-text); text-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+  .accent-bar { width: 32px; height: 3px; background: linear-gradient(90deg, var(--accent-pink), var(--accent-purple)); border-radius: 2px; margin-top: 8px; box-shadow: 0 0 8px rgba(160, 120, 255, 0.4); }
+  
+  .actions-wrap { display: flex; gap: 16px; }
+  .icon-btn { width: 40px; height: 40px; border-radius: 12px; background: var(--btn-bg); border: 1px solid var(--btn-border); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; color: var(--header-text); font-size: 18px; backdrop-filter: blur(10px); }
+  .refresh-btn:hover, .settings-btn:hover, .sort-btn:hover { color: var(--accent-purple); border-color: var(--accent-purple); transform: translateY(-3px) scale(1.05); box-shadow: 0 5px 15px rgba(160, 120, 255, 0.2); }
+  .close-btn:hover { background: var(--accent-danger); color: #fff; border-color: var(--accent-danger); transform: translateY(-3px) scale(1.05); box-shadow: 0 5px 15px rgba(255, 71, 87, 0.3); }
+  .sort-btn.active { color: var(--accent-purple) !important; border-color: var(--accent-purple) !important; background: rgba(160, 120, 255, 0.15) !important; box-shadow: 0 0 12px rgba(160, 120, 255, 0.3) !important; transform: scale(1.05); }
+  body.light-theme .sort-btn.active { background: rgba(160, 120, 255, 0.2) !important; }
+
+  @keyframes spinRefresh { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  .refresh-btn.spinning svg { animation: spinRefresh 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+
+  .category-tabs { display: flex; justify-content: center; align-items: center; gap: 16px; padding: 10px 40px 15px 40px; flex-shrink: 0; white-space: nowrap; overflow: visible; position: relative; z-index: 99; }
+  .tab-item { padding: 10px 28px; border-radius: 30px; font-size: 15px; font-weight: 700; color: var(--text-sub); background: var(--card-bg); border: 1px solid transparent; cursor: pointer; transition: all 0.3s; backdrop-filter: blur(10px); letter-spacing: 0.5px; }
+  .tab-item:hover { background: var(--card-hover); color: var(--text-main); }
+  .tab-item.active { color: #fff; background: var(--accent-purple); box-shadow: 0 6px 20px rgba(160, 120, 255, 0.4); }
+
+  .all-tab { padding: 0; display: flex; align-items: center; position: relative; border-radius: 30px; }
+  .all-tab .tab-text { padding: 10px 16px 10px 28px; cursor: pointer; transition: all 0.3s; }
+  .all-tab .dropdown-trigger { padding: 10px 18px 10px 10px; border-left: 1px solid rgba(255, 255, 255, 0.2); cursor: pointer; display: flex; align-items: center; border-top-right-radius: 30px; border-bottom-right-radius: 30px; transition: background 0.2s; }
+  .all-tab .dropdown-trigger:hover { background: rgba(0, 0, 0, 0.1); }
+  body.light-theme .all-tab .dropdown-trigger { border-left: 1px solid rgba(0, 0, 0, 0.1); }
+  body.light-theme .all-tab .dropdown-trigger:hover { background: rgba(0, 0, 0, 0.05); }
+  .all-tab.active .dropdown-trigger { border-left: 1px solid rgba(255, 255, 255, 0.3); }
+  .all-tab.active .dropdown-trigger:hover { background: rgba(0, 0, 0, 0.15); }
+
+  .filter-dropdown { position: absolute; top: calc(100% + 8px); left: 0; background: #2c2c2e; border: 1px solid var(--divider); border-radius: 16px; padding: 16px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); display: none; flex-direction: column; gap: 12px; z-index: 999; min-width: 140px; }
+  body.light-theme .filter-dropdown { background: #ffffff; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); }
+  .filter-dropdown.show { display: flex; animation: fadeIn 0.2s ease; }
+  .filter-item { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--text-main); }
+  .filter-item input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent-purple); cursor: pointer; }
+
+  .scroll-container { width: 100%; height: 384px; flex-shrink: 0; overflow: hidden; position: relative; }
+  .content-scroll { width: 100%; height: 100%; overflow-y: auto; padding: 20px 40px; display: flex; flex-wrap: wrap; gap: 24px; align-content: flex-start; justify-content: center; scrollbar-width: none; scroll-behavior: auto; }
+  .content-scroll::-webkit-scrollbar { display: none; }
+  .scroll-container::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 16px; background: linear-gradient(to top, #1c1c1e 0%, transparent 100%); pointer-events: none; z-index: 10; }
+  body.light-theme .scroll-container::after { background: linear-gradient(to top, #f5f5f0 0%, transparent 100%); }
+
+  .device-card { width: 160px; height: 160px; border-radius: 26px; background: var(--card-bg); border: 1px solid var(--divider); position: relative; overflow: hidden; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06); backdrop-filter: blur(16px); transition: transform 0.3s, box-shadow 0.3s, background 0.3s, border-color 0.3s, filter 0.3s; }
+  .device-card.is-charging { border-color: rgba(0, 230, 118, 0.8); animation: intenseGreenPulse 1.5s infinite alternate; }
+  @keyframes intenseGreenPulse { 0% { border-color: rgba(0, 230, 118, 0.3); box-shadow: 0 0 10px rgba(0, 230, 118, 0.2), inset 0 0 5px rgba(0, 230, 118, 0.1); } 100% { border-color: rgba(0, 230, 118, 1); box-shadow: 0 0 35px 12px rgba(0, 230, 118, 0.6), inset 0 0 20px rgba(0, 230, 118, 0.4); } }
+  .device-card.is-charging:hover { animation: none; border-color: rgba(0, 230, 118, 1); box-shadow: 0 0 45px 15px rgba(0, 230, 118, 0.8), inset 0 0 25px rgba(0, 230, 118, 0.5); transform: translateY(-6px) scale(1.03); }
+  .device-card.is-sleep { filter: grayscale(100%); opacity: 0.7; }
+  .device-card.is-unknown { border-color: rgba(150, 150, 150, 0.3); opacity: 0.85; }
+  .device-card:not(.is-charging):not(.is-sleep):not(.is-unknown):hover { transform: translateY(-6px) scale(1.03); background: var(--card-hover); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12); }
+
+  .battery-bg { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; transition: height 1s, background 0.4s; z-index: 0; }
+  .battery-bg.color-100 { background: linear-gradient(180deg, rgba(16, 185, 129, 0.4), rgba(16, 185, 129, 0.8)); } 
+  .battery-bg.color-80 { background: linear-gradient(180deg, rgba(34, 197, 94, 0.4), rgba(34, 197, 94, 0.8)); }  
+  .battery-bg.color-50 { background: linear-gradient(180deg, rgba(74, 222, 128, 0.4), rgba(74, 222, 128, 0.8)); } 
+  .battery-bg.color-30 { background: linear-gradient(180deg, rgba(163, 230, 53, 0.4), rgba(163, 230, 53, 0.8)); } 
+  .battery-bg.color-10 { background: linear-gradient(180deg, rgba(239, 68, 68, 0.4), rgba(239, 68, 68, 0.8)); }   
+
+  .card-content { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 18px 12px; text-align: center; }
+  .device-name-wrap { width: 100%; display: flex; align-items: center; justify-content: center; padding: 0 4px; position: relative; }
+  .device-name-grid { font-size: 18px; font-weight: 800; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 4px rgba(0,0,0,0.1); letter-spacing: 0.5px; }
+  .pin-icon { position: absolute; right: -4px; top: -8px; font-size: 12px; opacity: 0.8; display: none; }
+  .device-card.pinned .pin-icon { display: block; }
+  
+  .device-protocol { font-size: 12px; font-weight: 700; color: var(--text-sub); background: rgba(255, 255, 255, 0.5); padding: 4px 12px; border-radius: 12px; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.6); transition: all 0.3s; }
+  body:not(.light-theme) .device-protocol { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.1); }
+  .device-protocol.charging-text { color: #ff4757; background: rgba(255, 255, 255, 0.6); border-color: rgba(255, 71, 87, 0.5); box-shadow: 0 0 10px rgba(255, 0, 0, 0.3); }
+  body:not(.light-theme) .device-protocol.charging-text { background: rgba(255, 71, 87, 0.15); border-color: rgba(255, 71, 87, 0.4); }
+  .device-protocol.sleep-text { color: #888; background: rgba(0, 0, 0, 0.1); border-color: rgba(0, 0, 0, 0.1); }
+  body:not(.light-theme) .device-protocol.sleep-text { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.05); color: #999; }
+  .device-protocol.unknown-text { color: #888; background: rgba(0, 0, 0, 0.05); border-color: rgba(0, 0, 0, 0.05); }
+  body:not(.light-theme) .device-protocol.unknown-text { background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.03); color: #888; }
+  
+  .device-battery-grid { font-size: 36px; font-weight: 900; color: var(--text-main); line-height: 1; font-variant-numeric: tabular-nums; text-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+
+  #empty-state-view { flex: 1; display: none; flex-direction: column; align-items: center; justify-content: center; padding-bottom: 20px; animation: fadeIn 0.5s ease; }
+  .empty-title { font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; letter-spacing: 1px; }
+  .empty-desc { font-size: 13px; color: var(--text-sub); margin-bottom: 25px; }
+  .loading-dots { display: flex; gap: 8px; }
+  .loading-dots span { width: 6px; height: 6px; background-color: var(--text-sub); border-radius: 50%; animation: dotPulse 1.4s infinite both; }
+  .loading-dots span:nth-child(1) { animation-delay: -0.32s; } .loading-dots span:nth-child(2) { animation-delay: -0.16s; } .loading-dots span:nth-child(3) { animation-delay: 0s; } .loading-dots span:nth-child(4) { animation-delay: 0.16s; } .loading-dots span:nth-child(5) { animation-delay: 0.32s; }
+  @keyframes dotPulse { 0%, 80%, 100% { transform: scale(0); opacity: 0.3; } 40% { transform: scale(1); opacity: 1; } }
+
+  .bottom-panel { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 10px 0 15px 0; margin-top: auto; flex-shrink: 0; }
+  .interval-control { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 8px 16px; background-color: #1c1c1e; border: 1px solid var(--divider); border-radius: 20px; backdrop-filter: blur(16px); box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 10px; }
+  body.light-theme .interval-control { background-color: #f5f5f0; }
+  .interval-label { font-size: 13px; font-weight: 600; color: var(--text-sub); }
+  .interval-options { display: flex; gap: 6px; }
+  .interval-btn { padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: 700; color: var(--text-main); cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
+  .interval-btn:hover { background: var(--card-hover); }
+  .interval-btn.active { background: var(--accent-purple); color: #fff; box-shadow: 0 2px 8px rgba(160, 120, 255, 0.3); }
+  #greeting-text { text-align: center; font-size: 14px; font-weight: 600; letter-spacing: 3px; color: var(--text-sub); opacity: 0.8; }
+
+  .settings-view { display: none; flex-direction: column; height: 100%; animation: fadeIn 0.3s ease; position: relative; z-index: 10; }
+  .settings-header { display: flex; align-items: center; gap: 15px; padding: 25px 40px 15px 40px; flex-shrink: 0; position: relative; z-index: 100; }
+  .back-btn { width: 36px; height: 36px; border-radius: 10px; background: var(--btn-bg); border: 1px solid var(--btn-border); color: var(--header-text); cursor: pointer; font-size: 16px; transition: 0.2s; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+  .back-btn:hover { background: var(--card-hover); transform: scale(1.05); }
+  .settings-header h2 { font-size: 20px; font-weight: 700; color: var(--header-text); }
+  .settings-content { flex: 1; overflow-y: auto; padding: 0 40px 20px 40px; }
+  .settings-content::-webkit-scrollbar { width: 6px; } .settings-content::-webkit-scrollbar-thumb { background: var(--btn-border); border-radius: 3px; }
+  .settings-group { background: var(--card-bg); border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--divider); transition: background 0.3s; backdrop-filter: blur(16px); box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
+  .settings-group-title { font-size: 14px; color: var(--text-main); margin-bottom: 15px; font-weight: 700; }
+
+  .theme-selector { display: flex; gap: 10px; }
+  .theme-option { flex: 1; height: 50px; border-radius: 12px; border: 2px solid transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; transition: 0.3s; }
+  .theme-option.system { background: #333; color: #fff; } .theme-option.dark { background: #1c1c1e; color: #fff; } .theme-option.light { background: #f5f5f0; color: #1a1a1a; }
+  .theme-option.active { border-color: var(--accent-purple); box-shadow: 0 0 15px rgba(160, 120, 255, 0.3); transform: translateY(-2px); }
+
+  .switch-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--divider); }
+  .switch-row:last-child { border-bottom: none; }
+  .switch-label { font-size: 15px; color: var(--text-main); font-weight: 600; }
+  .switch-desc { font-size: 12px; color: var(--text-sub); margin-top: 4px; }
+  .toggle { position: relative; width: 44px; height: 24px; background: rgba(0,0,0,0.2); border-radius: 12px; cursor: pointer; transition: 0.3s; flex-shrink: 0; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+  .toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+  .toggle.on { background: var(--accent-purple); } .toggle.on::after { transform: translateX(20px); }
+
+  input[type="range"] { appearance: none; height: 6px; background: rgba(0,0,0,0.2); border-radius: 3px; outline: none; margin-top: 15px; width: 100%; }
+  input[type="range"]::-webkit-slider-thumb { appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 3px solid var(--accent-pink); cursor: pointer; box-shadow: 0 0 10px rgba(255, 105, 180, 0.5); transition: 0.2s; }
+  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+  .about-update-group { display: flex; gap: 12px; margin-top: 10px; }
+  .action-btn { flex: 1; background: var(--card-bg); border: 1px solid var(--divider); padding: 14px 0; border-radius: 14px; font-size: 14px; font-weight: 700; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s; backdrop-filter: blur(16px); }
+  .action-btn:hover { background: var(--card-hover); border-color: var(--accent-purple); color: var(--accent-purple); transform: translateY(-2px); box-shadow: 0 4px 15px rgba(160, 120, 255, 0.15); }
+
+  /* 优化后的 Modal 样式（高对比度） */
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 10000; opacity: 0; transition: opacity 0.3s; }
+  .modal-overlay.show { display: flex; opacity: 1; }
+  .modal-box { background: #ffffff; border: 1px solid rgba(0,0,0,0.1); padding: 30px 40px; border-radius: 20px; text-align: left; box-shadow: 0 15px 50px rgba(0,0,0,0.2); transform: scale(0.9); transition: transform 0.3s; width: 600px; color: #333; }
+  body:not(.light-theme) .modal-box { background: #2c2c2e; border-color: rgba(255,255,255,0.1); box-shadow: 0 15px 50px rgba(0,0,0,0.6); color: #fff; }
+  .modal-overlay.show .modal-box { transform: scale(1); }
+  .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 20px; text-align: center; }
+  
+  .input-group { margin-bottom: 15px; display: flex; gap: 15px; }
+  .input-group > div { flex: 1; }
+  .input-group label { display: block; font-size: 13px; font-weight: 600; color: #666; margin-bottom: 6px; }
+  body:not(.light-theme) .input-group label { color: #aaa; }
+  
+  .input-group input, .input-group textarea, .input-group select { 
+      width: 100%; padding: 12px; border-radius: 8px; 
+      border: 1px solid rgba(0,0,0,0.2); 
+      background: #f5f5f5; 
+      color: #1a1a1a; 
+      font-family: "Consolas", monospace; font-size: 13px; outline: none; transition: 0.2s;
+  }
+  body:not(.light-theme) .input-group input, 
+  body:not(.light-theme) .input-group textarea, 
+  body:not(.light-theme) .input-group select {
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(0,0,0,0.2);
+      color: #fff;
+  }
+  .input-group input:focus, .input-group textarea:focus, .input-group select:focus { 
+      border-color: var(--accent-purple); 
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(160, 120, 255, 0.2);
+  }
+  body:not(.light-theme) .input-group input:focus, 
+  body:not(.light-theme) .input-group textarea:focus { background: rgba(0,0,0,0.4); }
+  .input-group input::placeholder, .input-group textarea::placeholder { color: #999; }
+  
+  .highlight { color: #ff4757; font-weight: bold; background: rgba(255, 71, 87, 0.15); padding: 2px 6px; border-radius: 4px; }
+
+  .result-box { padding: 12px; background: rgba(160, 120, 255, 0.1); border: 1px solid rgba(160, 120, 255, 0.3); border-radius: 8px; font-size: 13px; color: #7c4dff; font-weight: 600; margin-bottom: 15px; display: none; line-height: 1.5; }
+  body:not(.light-theme) .result-box { color: #b99eff; }
+
+  .modal-btns { display: flex; gap: 12px; margin-top: 25px; }
+  .modal-btn { flex: 1; padding: 12px 0; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; transition: 0.2s; }
+  
+  .modal-btn-cancel { background: #f0f0f0; color: #333; border: 1px solid rgba(0,0,0,0.1); }
+  body:not(.light-theme) .modal-btn-cancel { background: rgba(255,255,255,0.1); color: #eee; border: 1px solid rgba(255,255,255,0.1); }
+  .modal-btn-cancel:hover { background: #e0e0e0; }
+  
+  .modal-btn-confirm { background: var(--accent-purple); color: #fff; box-shadow: 0 4px 15px rgba(160, 120, 255, 0.3); }
+  .modal-btn-confirm:hover { background: #8b5cf6; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(160, 120, 255, 0.4); }
+
+  .toast { position: fixed; top: 30px; left: 50%; transform: translateX(-50%) translateY(-20px); background: var(--card-bg); backdrop-filter: blur(16px); border: 1px solid var(--divider); color: var(--text-main); padding: 12px 24px; border-radius: 12px; font-size: 14px; font-weight: 600; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); opacity: 0; pointer-events: none; transition: all 0.3s; z-index: 9999; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .context-menu { position: fixed; background: var(--card-bg); border: 1px solid var(--divider); border-radius: 12px; padding: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); backdrop-filter: blur(20px); display: none; flex-direction: column; z-index: 100000; min-width: 140px; }
+  .context-menu.show { display: flex; animation: fadeIn 0.15s ease; }
+  .context-item { padding: 10px 14px; font-size: 13px; font-weight: 600; color: var(--text-main); border-radius: 8px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
+  .context-item:hover { background: var(--card-hover); color: var(--accent-purple); }
+  .context-item.danger:hover { color: var(--accent-danger); background: rgba(255, 71, 87, 0.15); }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+  <div id="main-view" style="height: 100%; display: flex; flex-direction: column; position: relative;">
+    <div class="header-wrap">
+      <div class="header">
+        <div class="title-wrap"><h1>设备电量</h1><div class="accent-bar"></div></div>
+        <div class="actions-wrap">
+          <div class="icon-btn sort-btn" id="sortBtn" onclick="sortDevices()" title="按电量排序"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h12M3 18h6"></path></svg></div>
+          <div class="icon-btn refresh-btn" onclick="refreshData()" title="刷新"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path></svg></div>
+          <div class="icon-btn settings-btn" onclick="switchView('settings')" title="设置"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></div>
+          <div class="icon-btn close-btn" onclick="closeWindow()" title="关闭"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></div>
+        </div>
+      </div>
+    </div>
+    <div class="category-tabs" id="category-tabs">
+      <div class="tab-item active all-tab" data-type="all">
+        <div class="tab-text" onclick="switchCategory('all')">全部</div>
+        <div class="dropdown-trigger" id="filterBtn" onclick="toggleFilterMenu(event)"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
+        <div class="filter-dropdown" id="filterMenu" onclick="event.stopPropagation()">
+          <label class="filter-item"><input type="checkbox" value="mouse" onchange="applyFilter()"> 鼠标</label>
+          <label class="filter-item"><input type="checkbox" value="keyboard" onchange="applyFilter()"> 键盘</label>
+          <label class="filter-item"><input type="checkbox" value="headset" onchange="applyFilter()"> 耳机</label>
+          <label class="filter-item"><input type="checkbox" value="gamepad" onchange="applyFilter()"> 手柄</label>
+          <label class="filter-item"><input type="checkbox" value="other" onchange="applyFilter()"> 其他</label>
+        </div>
+      </div>
+      <div class="tab-item" data-type="mouse" onclick="switchCategory('mouse')">鼠标</div>
+      <div class="tab-item" data-type="keyboard" onclick="switchCategory('keyboard')">键盘</div>
+      <div class="tab-item" data-type="headset" onclick="switchCategory('headset')">耳机</div>
+      <div class="tab-item" data-type="gamepad" onclick="switchCategory('gamepad')">手柄</div>
+      <div class="tab-item" data-type="other" onclick="switchCategory('other')">其他</div>
+    </div>
+    <div class="scroll-container" id="device-list-view"><div class="content-scroll"><div id="device-grid" style="display: contents;"></div></div></div>
+    <div id="empty-state-view"><div class="empty-title">没有检测到受支持的设备</div><div class="empty-desc">请确认接收器已插入，设备已开机</div><div class="loading-dots"><span></span><span></span><span></span><span></span><span></span></div></div>
+    <div class="bottom-panel">
+      <div class="interval-control">
+        <span class="interval-label">刷新间隔</span>
+        <div class="interval-options">
+          <div class="interval-btn" data-interval="15" onclick="setScanInterval(15)">15s</div>
+          <div class="interval-btn" data-interval="30" onclick="setScanInterval(30)">30s</div>
+          <div class="interval-btn" data-interval="60" onclick="setScanInterval(60)">60s</div>
+        </div>
+      </div>
+      <div id="greeting-text">早上好</div>
+    </div>
+  </div>
+  <div id="settings-view" class="settings-view">
+    <div class="settings-header">
+      <button class="back-btn" onclick="switchView('main')"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
+      <h2>设置</h2>
+    </div>
+    <div class="settings-content">
+      <div class="settings-group">
+        <div class="settings-group-title">软件主题</div>
+        <div class="theme-selector">
+          <div class="theme-option system" id="theme-system" onclick="setTheme('system')">跟随系统</div>
+          <div class="theme-option dark" id="theme-dark" onclick="setTheme('dark')">深色模式</div>
+          <div class="theme-option light" id="theme-light" onclick="setTheme('light')">浅色模式</div>
+        </div>
+      </div>
+      <div class="settings-group">
+        <div class="settings-group-title">提醒设置</div>
+        <div class="switch-row" style="flex-direction: column; align-items: flex-start;">
+          <div style="display: flex; justify-content: space-between; width: 100%; margin-bottom: 5px;"><div class="switch-label">低电量提醒阈值</div><div style="color: var(--accent-pink); font-weight: bold;"><span id="lowBattText">10</span>%</div></div>
+          <div class="switch-desc" style="margin-bottom: 10px;">低于此值弹窗提醒（0 代表关闭）</div>
+          <input type="range" id="lowBattSlider" min="0" max="20" value="10" oninput="onLowBattChange(this.value)">
+        </div>
+      </div>
+      <div class="settings-group">
+        <div class="settings-group-title">任务栏选项</div>
+        <div class="switch-row"><div><div class="switch-label">开机自动启动</div><div class="switch-desc">随 Windows 启动一同运行</div></div><div class="toggle" id="toggle-startup" onclick="toggleOption('startup')"></div></div>
+        <div class="switch-row"><div><div class="switch-label">关闭时直接退出</div><div class="switch-desc">关闭窗口时不隐藏到托盘，而是退出程序</div></div><div class="toggle" id="toggle-close" onclick="toggleOption('close')"></div></div>
+        <div class="switch-row"><div><div class="switch-label">托盘显示电量</div><div class="switch-desc">鼠标悬停托盘图标时显示至多4个设备的电量悬浮窗</div></div><div class="toggle" id="toggle-tray" onclick="toggleOption('trayTip')"></div></div>
+      </div>
+      <div class="settings-group">
+        <div class="settings-group-title">高级 / 性能设置</div>
+        <div class="switch-row"><div><div class="switch-label">开启硬件加速</div><div class="switch-desc">提升界面流畅度（需重启生效）</div></div><div class="toggle" id="toggle-hw" onclick="toggleHwAccel()"></div></div>
+        <div class="switch-row">
+            <div><div class="switch-label">协议学习（抓包，测试版）</div><div class="switch-desc">通过底层 USBPcap 自动抓包分析未知设备的电量</div></div>
+            <div class="action-btn" style="padding: 8px 12px; font-size: 12px; flex: none;" onclick="showLearnModal()">打开学习器</div>
+        </div>
+      </div>
+      <div class="about-update-group">
+        <div class="action-btn" onclick="checkUpdate()"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path></svg>检查更新</div>
+        <div class="action-btn" onclick="showAbout()"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>关于</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 协议学习 Modal -->
+  <div id="learn-modal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-title">🔍 USB 协议学习器 (自动抓包)</div>
+      <div class="switch-desc" style="margin-bottom: 15px; line-height: 1.5; font-size: 13px;">
+        <b>操作提示：</b>请保持设备连接。点击下方按钮后，系统将在后台静默抓包 3 秒，请在此期间<b>疯狂按动手柄/鼠标按键</b>以产生数据流量。再次点击按钮可取消抓包。
+      </div>
+      
+      <div class="input-group">
+        <div>
+            <label>设备名称</label>
+            <input type="text" id="learn-name" placeholder="例如: 我的极客手柄">
+        </div>
+        <div>
+            <label>设备分类</label>
+            <select id="learn-type">
+                <option value="gamepad">手柄</option>
+                <option value="mouse">鼠标</option>
+                <option value="keyboard">键盘</option>
+                <option value="headset">耳机</option>
+                <option value="other">其他</option>
+            </select>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <div>
+            <label>Vid (十六进制)</label>
+            <input type="text" id="learn-vid" placeholder="例如: 045E">
+        </div>
+        <div>
+            <label>Pid (十六进制)</label>
+            <input type="text" id="learn-pid" placeholder="例如: 02EA">
+        </div>
+      </div>
+
+      <!-- 自动化抓包输入区 -->
+      <div class="input-group" style="flex-direction: column; gap: 12px; margin-top: 20px;">
+        <div>
+            <label style="margin-bottom: 8px;">报文 A（满电时抓包）</label>
+            <div style="display: flex; gap: 10px;">
+                <button class="modal-btn modal-btn-cancel" style="flex:1;" id="btn-capture-a" onclick="toggleCapture('A')">🧲 自动抓包 A</button>
+                <div id="display-hex-a" style="flex:2; font-family:monospace; font-size:12px; color:#666; border:1px dashed #ccc; padding:10px; border-radius:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center;">尚未抓包...</div>
+            </div>
+        </div>
+        <div>
+            <label style="margin-bottom: 8px;">报文 B（低电时抓包）</label>
+            <div style="display: flex; gap: 10px;">
+                <button class="modal-btn modal-btn-cancel" style="flex:1;" id="btn-capture-b" onclick="toggleCapture('B')">🧲 自动抓包 B</button>
+                <div id="display-hex-b" style="flex:2; font-family:monospace; font-size:12px; color:#666; border:1px dashed #ccc; padding:10px; border-radius:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center;">尚未抓包...</div>
+            </div>
+        </div>
+      </div>
+
+      <div class="result-box" id="learn-result"></div>
+
+      <div class="modal-btns">
+        <button class="modal-btn modal-btn-cancel" onclick="closeLearnModal()">取消</button>
+        <button class="modal-btn modal-btn-confirm" onclick="analyzeHex()">自动分析差异</button>
+        <button class="modal-btn modal-btn-confirm" id="learn-save-btn" style="display:none; background:#34c759;" onclick="saveCustomDevice()">保存协议配置</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="context-menu" class="context-menu" onclick="event.stopPropagation()">
+    <div class="context-item" id="ctx-pin" onclick="handlePinAction()">📌 固定到托盘</div>
+    <div class="context-item danger" id="ctx-unpin" onclick="handlePinAction()">🗑️ 从托盘移除</div>
+  </div>
+
+  <div id="about-modal" class="modal-overlay">
+    <div class="modal-box" style="text-align: center; max-width: 300px;">
+      <div class="modal-icon" style="font-size: 40px; margin-bottom: 15px;">🔋</div>
+      <div class="modal-title">设备电量监控</div>
+      <div class="modal-desc" style="font-size: 14px; color: var(--text-sub); line-height: 1.6; margin-bottom: 20px;">版本: v0.1<br>一个简约并且不简单，支持多协议、自动抓包学习的设备电量监控小工具。</div>
+      <button class="modal-btn modal-btn-confirm" onclick="closeAbout()">关闭</button>
+    </div>
+  </div>
+  <div id="custom-toast" class="toast"></div>
+
+<script>
+  document.addEventListener('contextmenu', event => event.preventDefault());
+  let config = { theme: 'system', startup: false, closeDirectly: false, trayTip: true };
+  let isSystemDark = true, currentInterval = 15, currentCategory = 'all', isSortEnabled = false, globalCachedDevices = [];
+  let lastRefreshTime = 0; const REFRESH_CD = 300; 
+  let pinnedDevices = new Set(); 
+  let contextMenuTarget = "";    
+
+  // --- 抓包模块逻辑 ---
+  let hexA = "", hexB = "", detectedOffset = -1;
+  let isCapturing = false, capturingType = '';
+
+  function toggleCapture(type) {
+      if (isCapturing) {
+          if (capturingType === type) cancelCapture();
+          return;
+      }
+      
+      const disp = document.getElementById(type === 'A' ? 'display-hex-a' : 'display-hex-b');
+      const btn = document.getElementById(type === 'A' ? 'btn-capture-a' : 'btn-capture-b');
+      
+      disp.textContent = "⏳ 正在抓包(约3秒)，请按键...";
+      disp.style.color = "#a078ff";
+      disp.style.border = "1px solid #a078ff";
+      btn.textContent = "❌ 取消抓包";
+      btn.style.color = "#ff4757";
+      btn.style.borderColor = "rgba(255,71,87,0.5)";
+      btn.style.background = "rgba(255,71,87,0.1)";
+      
+      isCapturing = true;
+      capturingType = type;
+
+      if (window.chrome.webview) window.chrome.webview.postMessage("start_capture:" + type);
+  }
+
+  function cancelCapture() {
+      if (!isCapturing) return;
+      isCapturing = false;
+      if (window.chrome.webview) window.chrome.webview.postMessage("cancel_capture");
+      
+      ['A', 'B'].forEach(t => {
+          const disp = document.getElementById(t === 'A' ? 'display-hex-a' : 'display-hex-b');
+          const btn = document.getElementById(t === 'A' ? 'btn-capture-a' : 'btn-capture-b');
+          if (btn.textContent.includes('取消')) {
+              btn.textContent = `🧲 自动抓包 ${t}`;
+              btn.style = "";
+              disp.textContent = "已取消抓包";
+              disp.style.color = "#888";
+              disp.style.border = "1px dashed #ccc";
+          }
+      });
+  }
+
+  function closeLearnModal() { 
+      cancelCapture();
+      document.getElementById('learn-modal').classList.remove('show'); 
+  }
+  
+  function showLearnModal() { document.getElementById('learn-modal').classList.add('show'); }
+
+  function analyzeHex() {
+      const resBox = document.getElementById('learn-result');
+      const saveBtn = document.getElementById('learn-save-btn');
+      
+      if (!hexA || !hexB) { showToast("请先抓取报文A和B"); return; }
+      const bytesA = hexA.trim().split(/\s+/);
+      const bytesB = hexB.trim().split(/\s+/);
+      
+      let diffIndices = [];
+      let minLen = Math.min(bytesA.length, bytesB.length);
+      for (let i = 0; i < minLen; i++) {
+          if (bytesA[i] !== bytesB[i]) diffIndices.push(i);
+      }
+
+      if (diffIndices.length === 0) {
+          resBox.innerHTML = "❌ 未检测到差异，请确保设备确实按下了不同按键，且电量不同。";
+          resBox.style.display = 'block'; saveBtn.style.display = 'none'; return;
+      }
+
+      let bestGuess = diffIndices[0];
+      for (let idx of diffIndices) {
+          if (parseInt(bytesA[idx], 16) <= 100 || parseInt(bytesB[idx], 16) <= 100) { bestGuess = idx; break; }
+      }
+
+      detectedOffset = bestGuess;
+      resBox.innerHTML = `✅ 分析完成！发现 ${diffIndices.length} 处差异。\n预测电量字节偏移量：<span class="highlight">${bestGuess}</span> (第 ${bestGuess+1} 个字节)\nA值: ${parseInt(bytesA[bestGuess],16)} | B值: ${parseInt(bytesB[bestGuess],16)}`;
+      resBox.style.display = 'block'; resBox.style.whiteSpace = 'pre-wrap';
+      saveBtn.style.display = 'block';
+  }
+
+  function saveCustomDevice() {
+      const name = document.getElementById('learn-name').value.trim() || "未命名设备";
+      const type = document.getElementById('learn-type').value;
+      const vid = document.getElementById('learn-vid').value.trim();
+      const pid = document.getElementById('learn-pid').value.trim();
+
+      if (!vid || !pid) { showToast("请填写 Vid 和 Pid"); return; }
+      if (detectedOffset === -1) { showToast("请先分析报文"); return; }
+
+      const payload = {
+          action: "save_custom_device",
+          vid: "0x" + vid.replace(/^0x/i, ''),
+          pid: "0x" + pid.replace(/^0x/i, ''),
+          name: name,
+          type: type,
+          offset: detectedOffset,
+          mask: 255
+      };
+
+      if (window.chrome.webview) {
+          window.chrome.webview.postMessage("save_custom:" + JSON.stringify(payload));
+          showToast("✅ 协议配置已保存！请重启软件生效");
+          closeLearnModal();
+      }
+  }
+
+  // --- 基础 UI 逻辑 ---
+  function closeAbout() { document.getElementById('about-modal').classList.remove('show'); }
+
+  function refreshData() {
+      const btnWrap = document.querySelector('.refresh-btn');
+      btnWrap.classList.remove('spinning'); void btnWrap.offsetWidth; btnWrap.classList.add('spinning');
+      setTimeout(() => { btnWrap.classList.remove('spinning'); }, 400); 
+      const now = Date.now();
+      if (now - lastRefreshTime < REFRESH_CD) { showToast("刷新太快了，歇一会吧"); return; }
+      lastRefreshTime = now;
+      if (window.chrome.webview) window.chrome.webview.postMessage("refresh");
+  }
+
+  function showContextMenu(e, devName) {
+      contextMenuTarget = devName;
+      const menu = document.getElementById('context-menu');
+      menu.style.left = e.clientX + 'px'; menu.style.top = e.clientY + 'px';
+      menu.classList.add('show');
+      const isPinned = pinnedDevices.has(devName);
+      document.getElementById('ctx-pin').style.display = isPinned ? 'none' : 'flex';
+      document.getElementById('ctx-unpin').style.display = isPinned ? 'flex' : 'none';
+  }
+
+  document.addEventListener('click', () => { document.getElementById('context-menu').classList.remove('show'); });
+
+  function handlePinAction() {
+      const isPinned = pinnedDevices.has(contextMenuTarget);
+      if (isPinned) {
+          pinnedDevices.delete(contextMenuTarget);
+          if (window.chrome.webview) window.chrome.webview.postMessage("remove_pin:" + contextMenuTarget);
+          showToast("已从托盘移除");
+      } else {
+          pinnedDevices.add(contextMenuTarget);
+          if (window.chrome.webview) window.chrome.webview.postMessage("add_pin:" + contextMenuTarget);
+          showToast("已固定到托盘");
+      }
+      renderDevices(globalCachedDevices); 
+  }
+
+  function updateGreeting() {
+    const hour = new Date().getHours(); let greeting = "早上好";
+    if (hour >= 5 && hour < 9) greeting = "早上好"; else if (hour >= 9 && hour < 12) greeting = "上午好";
+    else if (hour >= 12 && hour < 14) greeting = "中午好"; else if (hour >= 14 && hour < 18) greeting = "下午好";
+    else if (hour >= 18 && hour < 23) greeting = "晚上好"; else greeting = "夜深了，注意休息";
+    document.getElementById('greeting-text').textContent = greeting;
+  }
+
+  function setScanInterval(sec) {
+      currentInterval = sec; localStorage.setItem('scanInterval', sec); updateIntervalUI();
+      if (window.chrome.webview) window.chrome.webview.postMessage("set_interval:" + sec);
+      showToast(`已切换为 ${sec} 秒刷新`);
+  }
+
+  function updateIntervalUI() {
+      document.querySelectorAll('.interval-btn').forEach(btn => btn.classList.toggle('active', parseInt(btn.getAttribute('data-interval')) === currentInterval));
+  }
+
+  function switchCategory(type) {
+      currentCategory = type;
+      document.querySelectorAll('.tab-item[data-type]').forEach(el => el.classList.toggle('active', el.getAttribute('data-type') === type));
+      document.querySelectorAll('.filter-dropdown input[type="checkbox"]').forEach(cb => cb.checked = false);
+      document.getElementById('filterMenu').classList.remove('show'); 
+      renderDevices(globalCachedDevices);
+  }
+
+  function toggleFilterMenu(e) { e.stopPropagation(); document.getElementById('filterMenu').classList.toggle('show'); }
+  document.addEventListener('click', (e) => {
+      const menu = document.getElementById('filterMenu');
+      if (menu.classList.contains('show') && !menu.contains(e.target) && !e.target.closest('.dropdown-trigger')) menu.classList.remove('show');
+  });
+
+  function applyFilter() {
+      const checkedFilters = document.querySelectorAll('.filter-dropdown input:checked');
+      if (checkedFilters.length > 0) {
+          currentCategory = 'all';
+          document.querySelectorAll('.tab-item[data-type]').forEach(el => el.classList.toggle('active', el.getAttribute('data-type') === 'all'));
+      }
+      renderDevices(globalCachedDevices);
+  }
+
+  function loadConfig() {
+    const saved = localStorage.getItem('batteryMonitorConfig');
+    if (saved) {
+      config = JSON.parse(saved); if (!config.theme) config.theme = 'system'; if (config.trayTip === undefined) config.trayTip = true;
+      document.getElementById('toggle-startup').classList.toggle('on', config.startup);
+      document.getElementById('toggle-close').classList.toggle('on', config.closeDirectly);
+      document.getElementById('toggle-tray').classList.toggle('on', config.trayTip);
+    }
+    const savedInterval = localStorage.getItem('scanInterval'); if (savedInterval) currentInterval = parseInt(savedInterval);
+    updateIntervalUI();
+  }
+
+  function saveConfig() { localStorage.setItem('batteryMonitorConfig', JSON.stringify(config)); }
+
+  function applyTheme() {
+    let isDark = false; 
+    if (config.theme === 'light') { document.body.classList.add('light-theme'); isDark = false; }
+    else if (config.theme === 'dark') { document.body.classList.remove('light-theme'); isDark = true; }
+    else if (config.theme === 'system') {
+      if (isSystemDark) { document.body.classList.remove('light-theme'); isDark = true; } 
+      else { document.body.classList.add('light-theme'); isDark = false; }
+    }
+    updateThemeUI();
+    if (window.chrome.webview) window.chrome.webview.postMessage("theme_changed:" + (isDark ? "dark" : "light"));
+  }
+
+  document.addEventListener('mousedown', (e) => {
+      if (e.clientX < 8 || e.clientX > window.innerWidth - 8 || e.clientY < 8 || e.clientY > window.innerHeight - 8) return;
+      if (e.target.closest('.icon-btn') || e.target.closest('.back-btn') || e.target.closest('.toggle') || e.target.closest('input') || e.target.closest('.action-btn') || e.target.closest('.interval-control') || e.target.closest('.category-tabs') || e.target.closest('button')) return; 
+      if (e.clientY < 100 || e.target.closest('.settings-header')) { if (window.chrome.webview) window.chrome.webview.postMessage("drag-window"); }
+  });
+
+  function switchView(view) {
+    if (view === 'settings') {
+      document.getElementById('main-view').style.display = 'none'; document.getElementById('settings-view').style.display = 'flex'; document.querySelector('.settings-content').scrollTop = 0;
+    } else {
+      document.getElementById('settings-view').style.display = 'none'; document.getElementById('main-view').style.display = 'flex';
+    }
+  }
+  
+  function setTheme(theme) { config.theme = theme; saveConfig(); applyTheme(); }
+  function updateThemeUI() {
+    document.getElementById('theme-system').classList.toggle('active', config.theme === 'system');
+    document.getElementById('theme-dark').classList.toggle('active', config.theme === 'dark');
+    document.getElementById('theme-light').classList.toggle('active', config.theme === 'light');
+  }
+
+  function toggleOption(option) {
+    if (option === 'startup') { config.startup = !config.startup; document.getElementById('toggle-startup').classList.toggle('on', config.startup); if (window.chrome.webview) window.chrome.webview.postMessage("toggle_startup:" + (config.startup ? "1" : "0")); }
+    else if (option === 'close') { config.closeDirectly = !config.closeDirectly; document.getElementById('toggle-close').classList.toggle('on', config.closeDirectly); if (window.chrome.webview) window.chrome.webview.postMessage("set_close_directly:" + (config.closeDirectly ? "1" : "0")); }
+    else if (option === 'trayTip') { config.trayTip = !config.trayTip; document.getElementById('toggle-tray').classList.toggle('on', config.trayTip); if (window.chrome.webview) window.chrome.webview.postMessage("set_tray_tip:" + (config.trayTip ? "1" : "0")); }
+    saveConfig();
+  }
+  
+  function closeWindow() { if (window.chrome.webview) { if (config.closeDirectly) window.chrome.webview.postMessage("exit-app"); else window.chrome.webview.postMessage("close-window"); } }
+  function toggleHwAccel() { const toggle = document.getElementById('toggle-hw'); toggle.classList.toggle('on'); if (window.chrome.webview) window.chrome.webview.postMessage("hw_accel:" + (toggle.classList.contains('on') ? "1" : "0")); }
+  function onLowBattChange(val) { document.getElementById('lowBattText').textContent = val; if (window.chrome.webview) window.chrome.webview.postMessage("low_batt:" + val); }
+
+  let toastTimer;
+  function showToast(message) {
+      const toast = document.getElementById('custom-toast'); toast.textContent = message; toast.classList.add('show');
+      clearTimeout(toastTimer); toastTimer = setTimeout(() => { toast.classList.remove('show'); }, 3000);
+  }
+
+  function checkUpdate() { showToast("正在检查更新..."); setTimeout(() => showToast("当前已是最新版本 v1.2.2"), 1200); }
+  function showAbout() { document.getElementById('about-modal').classList.add('show'); }
+
+  function sortDevices() {
+      isSortEnabled = !isSortEnabled; const btn = document.getElementById('sortBtn');
+      if (isSortEnabled) { btn.classList.add('active'); showToast("已按电量从高到低排序"); } 
+      else { btn.classList.remove('active'); showToast("已恢复默认顺序"); }
+      renderDevices(globalCachedDevices);
+  }
+
+  function renderDevices(devices) {
+    const listView = document.getElementById('device-list-view'), emptyView = document.getElementById('empty-state-view'), container = document.getElementById('device-grid');
+    globalCachedDevices = devices || [];
+    let displayDevices = [...globalCachedDevices];
+
+    if (isSortEnabled) {
+        displayDevices.sort((a, b) => {
+            const aSleep = a.battery < 0, bSleep = b.battery < 0;
+            if (aSleep && !bSleep) return 1; if (!aSleep && bSleep) return -1; if (aSleep && bSleep) return 0;
+            return b.battery - a.battery;
+        });
+    }
+
+    let filteredDevices = displayDevices;
+    const checkedFilters = new Set();
+    document.querySelectorAll('.filter-dropdown input:checked').forEach(cb => checkedFilters.add(cb.value));
+
+    if (checkedFilters.size > 0) {
+        filteredDevices = displayDevices.filter(dev => {
+            let type = dev.type === 'joystick' ? 'gamepad' : dev.type;
+            if (checkedFilters.has('other') && !['mouse', 'keyboard', 'headset', 'gamepad'].includes(type)) return true;
+            return checkedFilters.has(type);
+        });
+    } else if (currentCategory !== 'all') {
+        filteredDevices = displayDevices.filter(dev => {
+            if (currentCategory === 'other') return !['mouse', 'keyboard', 'headset', 'gamepad', 'joystick'].includes(dev.type);
+            if (currentCategory === 'gamepad') return dev.type === 'gamepad' || dev.type === 'joystick';
+            return dev.type === currentCategory;
+        });
+    }
+
+    if (!filteredDevices || filteredDevices.length === 0) {
+        listView.style.display = 'none'; emptyView.style.display = 'flex';
+        const emptyTitle = emptyView.querySelector('.empty-title');
+        if (checkedFilters.size > 0 || currentCategory !== 'all') emptyTitle.textContent = "该分类下暂无设备";
+        else emptyTitle.textContent = "没有检测到受支持的设备";
+        container.querySelectorAll('.device-card').forEach(item => item.remove()); return;
+    } else {
+        listView.style.display = 'block'; emptyView.style.display = 'none';
+    }
+
+    const currentKeys = new Set();
+    filteredDevices.forEach(dev => {
+      const uniqueKey = `${dev.type}|${dev.name}`;
+      if (currentKeys.has(uniqueKey)) return; currentKeys.add(uniqueKey);
+      const existingNode = container.querySelector(`[data-key="${uniqueKey}"]`);
+      
+      const pct = dev.battery;
+      const isSleep = pct === -1;          
+      const isUnknown = pct === -2;        
+      const isCharging = dev.isCharging === true;
+      
+      let displayName = (dev.name && dev.name.trim() !== "") ? dev.name : "未知设备";
+      displayName = displayName.replace(/[_\-\s]*2\.4G/ig, '').replace(/[_\-\s]*蓝牙/ig, '').replace(/[_\-\s]*bluetooth/ig, '').trim();
+      
+      let displayPct = '--', displayWidth = 0;
+      if (isSleep) displayPct = '休眠';
+      else if (isUnknown) displayPct = '未知';
+      else { displayPct = pct + '%'; displayWidth = pct; }
+
+      const isPinned = pinnedDevices.has(dev.name); 
+      
+      let displayProtocol = dev.protocol || "未知协议", protocolClass = "device-protocol", cardClass = isPinned ? 'pinned' : '';
+      if (isSleep) { 
+          displayProtocol = "💤 休眠中"; protocolClass = "device-protocol sleep-text"; cardClass += " is-sleep"; 
+      } else if (isUnknown) {
+          displayProtocol = "🔗 无法读取电量"; protocolClass = "device-protocol unknown-text"; cardClass += " is-unknown";
+      } else if (isCharging) { 
+          displayProtocol = "⚡ 正在充电"; protocolClass = "device-protocol charging-text"; cardClass += " is-charging"; 
+      } else { 
+          displayProtocol = (displayProtocol.includes("蓝牙") ? "🔵 " : "📶 ") + displayProtocol; 
+      }
+
+      let fontSize = '36px'; 
+      if (isSleep || isUnknown) fontSize = '24px'; 
+      else if (pct === 100) fontSize = '32px';
+      
+      let colorClass = 'color-10';
+      if (pct === 100) colorClass = 'color-100'; else if (pct >= 80) colorClass = 'color-80';
+      else if (pct >= 50) colorClass = 'color-50'; else if (pct >= 30) colorClass = 'color-30';
+      
+      if (existingNode) {
+        const battTextNode = existingNode.querySelector('.device-battery-grid'), bgNode = existingNode.querySelector('.battery-bg'), protocolNode = existingNode.querySelector('.device-protocol');
+        if (!isSleep && !isUnknown) {
+            const oldText = battTextNode.textContent.replace('%', ''), oldPct = parseInt(oldText);
+            if (!isNaN(oldPct) && oldPct !== pct) animateNumber(battTextNode, oldPct, pct); else battTextNode.textContent = displayPct;
+        } else { battTextNode.textContent = displayPct; }
+        battTextNode.style.fontSize = fontSize; bgNode.style.height = displayWidth + '%';
+        
+        if (bgNode.className !== `battery-bg ${colorClass}`) bgNode.className = `battery-bg ${colorClass}`;
+        const expectedCardClass = `device-card ${cardClass}`;
+        if (existingNode.className !== expectedCardClass) existingNode.className = expectedCardClass;
+        if (protocolNode.textContent !== displayProtocol) protocolNode.textContent = displayProtocol;
+        protocolNode.className = protocolClass;
+        const nameNode = existingNode.querySelector('.device-name-grid');
+        if (nameNode.textContent !== displayName) nameNode.textContent = displayName;
+        existingNode.setAttribute('data-raw-name', dev.name);
+        container.appendChild(existingNode);
+      } else {
+        container.insertAdjacentHTML('beforeend', `
+          <div class="device-card ${cardClass}" data-key="${uniqueKey}" data-raw-name="${dev.name}">
+            <div class="battery-bg ${colorClass}" style="height: ${displayWidth}%;"></div>
+            <div class="card-content">
+              <div class="device-name-wrap">
+                <div class="device-name-grid" title="${displayName}">${displayName}</div>
+                <div class="pin-icon">📌</div>
+              </div>
+              <div class="${protocolClass}">${displayProtocol}</div>
+              <div class="device-battery-grid" style="font-size: ${fontSize};">${displayPct}</div>
+            </div>
+          </div>`);
+      }
+    });
+
+    container.querySelectorAll('.device-card').forEach(item => { if (!currentKeys.has(item.getAttribute('data-key'))) item.remove(); });
+    
+    container.querySelectorAll('.device-card').forEach(card => {
+        card.oncontextmenu = (e) => {
+            e.preventDefault(); e.stopPropagation();
+            showContextMenu(e, card.getAttribute('data-raw-name'));
+        };
+    });
+  }
+
+  function animateNumber(element, start, end, duration = 800) {
+      if (start === end) return;
+      let startTimestamp = null;
+      const step = (timestamp) => {
+          if (!startTimestamp) startTimestamp = timestamp;
+          const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+          const easeOut = 1 - (1 - progress) * (1 - progress);
+          const current = Math.floor(easeOut * (end - start) + start);
+          element.textContent = current + '%';
+          if (progress < 1) window.requestAnimationFrame(step); else element.textContent = end + '%';
+      };
+      window.requestAnimationFrame(step);
+  }
+
+  const scrollWrapper = document.querySelector('.content-scroll');
+  const SCROLL_STEP = 368; let targetScrollTop = scrollWrapper.scrollTop, rafId = null, lastScrollTime = null;
+
+  function smoothScrollToTarget(time) {
+    if (lastScrollTime === null) lastScrollTime = time;
+    const dt = Math.min(50, time - lastScrollTime); lastScrollTime = time;
+    const current = scrollWrapper.scrollTop, diff = targetScrollTop - current;
+    if (Math.abs(diff) < 0.5) { scrollWrapper.scrollTop = targetScrollTop; rafId = null; lastScrollTime = null; return; }
+    const speed = 1 - Math.pow(1 - 0.15, dt / 16.667); scrollWrapper.scrollTop = current + diff * speed;
+    rafId = requestAnimationFrame(smoothScrollToTarget);
+  }
+
+  if (scrollWrapper) {
+    scrollWrapper.addEventListener('wheel', (e) => {
+      e.preventDefault(); const maxScroll = scrollWrapper.scrollHeight - scrollWrapper.clientHeight;
+      if (e.deltaY > 0) targetScrollTop = Math.min(maxScroll, targetScrollTop + SCROLL_STEP);
+      else if (e.deltaY < 0) targetScrollTop = Math.max(0, targetScrollTop - SCROLL_STEP);
+      if (!rafId) rafId = requestAnimationFrame(smoothScrollToTarget);
+    }, { passive: false });
+  }
+
+  window.chrome.webview.addEventListener('message', event => {
+    try {
+        const data = event.data;
+        if (data.action === "showToast") showToast(data.message);
+        if (data.systemDark !== undefined) { isSystemDark = data.systemDark; applyTheme(); }
+        if (data.hwAccel !== undefined) document.getElementById('toggle-hw').classList.toggle('on', data.hwAccel === 1);
+        if (data.lowBatt !== undefined) { document.getElementById('lowBattSlider').value = data.lowBatt; document.getElementById('lowBattText').textContent = data.lowBatt; }
+        if (data.startup !== undefined) { config.startup = data.startup; document.getElementById('toggle-startup').classList.toggle('on', config.startup); saveConfig(); }
+        if (data.closeDirectly !== undefined) { config.closeDirectly = data.closeDirectly; document.getElementById('toggle-close').classList.toggle('on', config.closeDirectly); saveConfig(); }
+        if (data.trayTip !== undefined) { config.trayTip = data.trayTip; document.getElementById('toggle-tray').classList.toggle('on', config.trayTip); saveConfig(); }
+        
+        if (data.pinnedDevices !== undefined) { pinnedDevices = new Set(data.pinnedDevices); }
+
+        // 接收 C++ 抓包结果
+        if (data.action === "capture_result") {
+            isCapturing = false;
+            const disp = document.getElementById(data.type === 'A' ? 'display-hex-a' : 'display-hex-b');
+            const btn = document.getElementById(data.type === 'A' ? 'btn-capture-a' : 'btn-capture-b');
+            
+            btn.textContent = `🧲 自动抓包 ${data.type}`;
+            btn.style = "";
+            
+            if (data.hex.startsWith("ERROR_")) {
+                disp.textContent = data.hex;
+                disp.style.color = "#ff4757"; 
+                disp.style.border = `1px solid #ff4757`;
+                showToast("抓包失败，请查看提示信息");
+            } else if (data.hex === "") {
+                disp.textContent = "未捕获到数据";
+                disp.style.color = "#ff4757"; 
+                disp.style.border = `1px solid #ff4757`;
+            } else {
+                disp.textContent = data.hex;
+                disp.style.color = "#34c759"; 
+                disp.style.border = `1px solid #34c759`;
+            }
+            
+            if (data.type === 'A') hexA = data.hex;
+            else hexB = data.hex;
+        }
+
+        if (data.devices !== undefined) {
+            renderDevices(data.devices);
+            if (data.devices.length > 0) localStorage.setItem('cachedDevices', JSON.stringify(data.devices));
+            else localStorage.removeItem('cachedDevices');
+        }
+    } catch(e) { console.error("解析数据失败", e); }
+  });
+
+  window.onload = () => {
+    loadConfig(); applyTheme(); updateGreeting(); 
+    const cached = localStorage.getItem('cachedDevices'); let realDevices = [];
+    if (cached) { try { realDevices = JSON.parse(cached) || []; } catch (e) {} }
+    renderDevices(realDevices);
+    if (window.chrome.webview) { window.chrome.webview.postMessage("ready"); window.chrome.webview.postMessage("set_interval:" + currentInterval); }
+  };
+</script>
+</body>
+</html>

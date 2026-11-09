@@ -1,0 +1,14 @@
+[
+{
+  "directory": "C:/Users/qq908/Desktop/BatteryMonitor/build",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DUNICODE -D_UNICODE @CMakeFiles/BatteryMonitor.dir/includes_CXX.rsp -O3 -DNDEBUG -std=gnu++17 -o CMakeFiles\\BatteryMonitor.dir\\src\\drivers\\ml\\MLMouse.cpp.obj -c C:\\Users\\qq908\\Desktop\\BatteryMonitor\\src\\drivers\\ml\\MLMouse.cpp",
+  "file": "C:/Users/qq908/Desktop/BatteryMonitor/src/drivers/ml/MLMouse.cpp",
+  "output": "CMakeFiles/BatteryMonitor.dir/src/drivers/ml/MLMouse.cpp.obj"
+},
+{
+  "directory": "C:/Users/qq908/Desktop/BatteryMonitor/build",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DUNICODE -D_UNICODE @CMakeFiles/BatteryMonitor.dir/includes_CXX.rsp -O3 -DNDEBUG -std=gnu++17 -o CMakeFiles\\BatteryMonitor.dir\\src\\main.cpp.obj -c C:\\Users\\qq908\\Desktop\\BatteryMonitor\\src\\main.cpp",
+  "file": "C:/Users/qq908/Desktop/BatteryMonitor/src/main.cpp",
+  "output": "CMakeFiles/BatteryMonitor.dir/src/main.cpp.obj"
+}
+]
